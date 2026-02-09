@@ -16,7 +16,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qvzk3hq.mongodb.net/?appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -32,36 +32,26 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
-}
-run().catch(console.dir);
+
+
+
+    const db = client.db("parcelDB"); // your database
+    const parcelsCollection = db.collection("parcels");
 
 
 
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("Parcel Delivery Server is running!");
-});
 
 
-
-
-// GET all parcels
-    app.get("/parcels", async (req, res) => {
-      try {
-        const parcels = await parcelsCollection.find({}).toArray();
-        res.status(200).json(parcels);
-      } catch (error) {
-        res.status(500).json({ message: "Failed to fetch parcels", error });
-      }
-    });
+    // GET all parcels
+    // app.get("/parcels", async (req, res) => {
+    //   try {
+    //     const parcels = await parcelsCollection.find({}).toArray();
+    //     res.status(200).json(parcels);
+    //   } catch (error) {
+    //     res.status(500).json({ message: "Failed to fetch parcels", error });
+    //   }
+    // });
 
     // GET a single parcel by ID
     app.get("/parcels/:id", async (req, res) => {
@@ -85,6 +75,53 @@ app.get("/", (req, res) => {
         res.status(500).json({ message: "Failed to add parcel", error });
       }
     });
+
+
+
+// GET /parcels?email=user@example.com
+app.get("/parcels", async (req, res) => {
+  const email = req.query.email; // get email if provided
+  let query = {};
+
+  if (email) {
+    query.userEmail = email; // filter by email
+  }
+
+  const parcels = await parcelsCollection.find(query).toArray();
+  res.status(200).json(parcels); // send parcels array directly
+});
+
+
+
+// DELETE a specific parcel by ID
+app.delete("/parcels/:id", async (req, res) => {
+  const id = req.params.id;
+  const result = await parcelsCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result)
+})
+
+
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    // Ensures that the client will close when you finish/error
+    // await client.close();
+  }
+}
+run().catch(console.dir);
+
+
+
+
+// Test route
+app.get("/", (req, res) => {
+  res.send("Parcel Delivery Server is running!");
+});
+
+
+
+
 
 
 
